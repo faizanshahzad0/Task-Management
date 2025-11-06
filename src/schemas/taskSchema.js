@@ -33,6 +33,10 @@ const taskSchema = new mongoose.Schema(
       default: TASKS_PRIORITIES.MEDIUM,
       required: true,
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     completedAt: {
       type: Date,
     },
@@ -47,4 +51,4 @@ const taskSchema = new mongoose.Schema(
 
 const Task = mongoose.model("Task", taskSchema);
 
-module.exports = Task
+module.exports = Task;

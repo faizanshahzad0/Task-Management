@@ -1,6 +1,8 @@
 const User = require("../schemas/userSchema");
 const { accToken, refToken } = require("../services/jwtAuthentication");
 
+const NODE_ENV = process.env.NODE_ENV;
+
 const handleSignUp = async (req, res) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
@@ -26,7 +28,14 @@ const handleSignUp = async (req, res) => {
     const userWithoutPassword = newUser.toObject();
     delete userWithoutPassword.password;
 
-    res.status(201).json({ message: "User created successfully", user: userWithoutPassword });
+    if (NODE_ENV === "dev") {
+      res.redirect("/");
+    } else {
+      res.status(201).json({
+        message: "User created successfully",
+        user: userWithoutPassword,
+      });
+    }
   } catch (error) {
     console.error("Signup error:", error);
     res.status(500).json({
@@ -35,7 +44,6 @@ const handleSignUp = async (req, res) => {
     });
   }
 };
-
 
 const handleSignIn = async (req, res) => {
   try {
@@ -60,18 +68,34 @@ const handleSignIn = async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.status(200).json({
-      message: "User logged in successfully",
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-      },
-      accessToken,
-      refreshToken,
-    });
+    if (NODE_ENV === "dev") {
+      res.cookie('access-token', accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+      });
+      res.cookie('refresh-token', refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+      res.redirect("/dashboard");
+    } else {
+      res.status(200).json({
+        message: "User logged in successfully",
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+        },
+        accessToken,
+        refreshToken,
+      });
+    }
   } catch (error) {
     console.error("Signin error:", error);
     res.status(500).json({
@@ -81,26 +105,34 @@ const handleSignIn = async (req, res) => {
   }
 };
 
-
 const handleLogout = async (req, res) => {
   try {
-    const refreshToken = req.header('x-auth-token') || req.header('refresh-token');
+    const refreshToken = NODE_ENV === "dev"
+      ? req.cookies?.['refresh-token'] || req.header("x-auth-token") || req.header("refresh-token")
+      : req.header("x-auth-token") || req.header("refresh-token");
 
-    if (!refreshToken) {
+    if (!refreshToken && NODE_ENV !== "dev") {
       return res.status(401).json({ error: "Refresh token required" });
     }
 
-    const user = await User.findOne({ refreshToken });
-
-    if (user) {
-      user.refreshToken = null;
-      await user.save();
+    if (refreshToken) {
+      const user = await User.findOne({ refreshToken });
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
     }
 
-    return res.status(200).json({ 
-      message: "User logged out successfully",
-      note: "Refresh token has been invalidated. Please login again to get new tokens."
-    });
+    if (NODE_ENV === "dev") {
+      res.clearCookie('access-token');
+      res.clearCookie('refresh-token');
+      res.redirect("/");
+    } else {
+      return res.status(200).json({
+        message: "User logged out successfully",
+        note: "Refresh token has been invalidated. Please login again to get new tokens.",
+      });
+    }
   } catch (error) {
     console.error("Logout error:", error);
     return res.status(500).json({
@@ -110,5 +142,4 @@ const handleLogout = async (req, res) => {
   }
 };
 
-
-module.exports = { handleSignUp, handleSignIn, handleLogout }
+module.exports = { handleSignUp, handleSignIn, handleLogout };

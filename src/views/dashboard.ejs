@@ -6,47 +6,87 @@
   </head>
   <body class="bg-gray-600">
     <div class="w-full">
-      <h1 class="text-2xl ml-[256px] font-medium leading-8 text-gray-100 text-center mt-10">Users List</h1>
       <div class="w-full flex">
         <%- include('partials/sidebar') %>
         <div
           class="w-[calc(100%-256px)] ml-[256px] p-10 relative overflow-x-auto"
         >
-          <table
-            class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400"
-          >
-            <thead
-              class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
-            >
-              <tr>
-                <th scope="col" class="px-6 py-4">Name</th>
-                <th scope="col" class="px-6 py-4">Email</th>
-                <th scope="col" class="px-6 py-4">Role</th>
-                <th scope="col" class="px-6 py-4">Created At</th>
-                <th scope="col" class="px-6 py-4">Updated At</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% users.forEach(user => { %>
-              <tr
-                class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200"
+          <% if (user) { %>
+            <div class="flex justify-between items-center mb-6">
+              <h1 class="text-2xl font-medium leading-8 text-gray-100">My Tasks</h1>
+              <a
+                href="/logout"
+                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
               >
-                <th
-                  scope="row"
-                  class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                Logout
+              </a>
+            </div>
+            <% if (tasks && tasks.length > 0) { %>
+              <table
+                class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400"
+              >
+                <thead
+                  class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
                 >
-                   <%= user.firstName %> <%= user.lastName %>
-                </th>
-                <td class="px-6 py-4"><%= user.email %></td>
-                <td class="px-6 py-4 !capitalize"><%= user.role %></td>
-                <td class="px-6 py-4"><%= user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A' %></td>
-                <td class="px-6 py-4">
-                  <%= user.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : 'N/A' %>
-                </td>
-              </tr>
-              <% }) %>
-            </tbody>
-          </table>
+                  <tr>
+                    <th scope="col" class="px-6 py-4">Title</th>
+                    <th scope="col" class="px-6 py-4">Description</th>
+                    <th scope="col" class="px-6 py-4">Status</th>
+                    <th scope="col" class="px-6 py-4">Priority</th>
+                    <th scope="col" class="px-6 py-4">Due Date</th>
+                    <th scope="col" class="px-6 py-4">Completed At</th>
+                    <th scope="col" class="px-6 py-4">Created At</th>
+                    <th scope="col" class="px-6 py-4">Updated At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% tasks.forEach(task => { %>
+                  <tr
+                    class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200"
+                  >
+                    <th
+                      scope="row"
+                      class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                    >
+                       <%= task.title %>
+                    </th>
+                    <td class="px-6 py-4 line-clamp-2 text-truncate"><%= task.description %></td>
+                    <td class="px-6 py-4 !capitalize"><%= task.status %></td>
+                    <td class="px-6 py-4 !capitalize"><%= task.priority %></td>
+                    <td class="px-6 py-4"><%= task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A' %></td>
+                    <td class="px-6 py-4"><%= task.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'N/A' %></td>
+                    <td class="px-6 py-4"><%= task.createdAt ? new Date(task.createdAt).toLocaleString() : 'N/A' %></td>
+                    <td class="px-6 py-4"><%= task.updatedAt ? new Date(task.updatedAt).toLocaleString() : 'N/A' %></td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            <% } else { %>
+              <div class="w-full text-center py-12 flex items-center justify-center">
+                <p class="text-gray-300 text-lg">No tasks found. Create your first task!</p>
+              </div>
+            <% } %>
+          <% } else { %>
+            <!-- User is not logged in - show login/signup buttons -->
+            <div class="flex flex-col items-center justify-center min-h-[60vh]">
+              <h1 class="text-3xl font-bold text-gray-100 mb-8">Welcome to Task Management</h1>
+              <p class="text-gray-300 text-lg mb-8">Please login or sign up to view your tasks</p>
+              <div class="flex gap-4">
+                <a
+                  href="/signin"
+                  class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Sign In
+                </a>
+                <a
+                  href="/signup"
+                  class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Sign Up
+                </a>
+              </div>
+            </div>
+          <% } %>
         </div>
       </div>
     </div>
