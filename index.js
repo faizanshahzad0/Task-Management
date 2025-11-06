@@ -4,6 +4,7 @@ const express = require("express");
 const connectDB = require("./dbConnection");
 const userRoutes = require('./src/routes/userRoutes');
 const authRoutes = require('./src/routes/authRoutes');
+const taskRoutes = require('./src/routes/taskRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -23,6 +24,7 @@ app.get("/", (req, res) => {
 
 app.use('/', userRoutes);
 app.use('/', authRoutes);
+app.use('/', taskRoutes);
 
 app.listen(PORT, () => {
     console.log(`Project is running on port:${PORT}`);

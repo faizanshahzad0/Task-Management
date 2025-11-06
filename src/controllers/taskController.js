@@ -1,4 +1,4 @@
-const Task = require("../models/taskModel");
+const Task = require("../schemas/taskSchema");
 const { Searcher } = require("fast-fuzzy");
 const { taskValidations } = require("../middlewares/taskValidations");
 
@@ -105,7 +105,6 @@ const handleGetAllTasks = async (req, res) => {
       filter.dueDate = { $gte: startOfDay, $lte: endOfDay };
     }
 
-    // 🧩 If there’s no search, use filters directly
     if (!searchQuery) {
       const tasks = await Task.find(filter)
         .sort({ createdAt: -1 })
