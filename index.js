@@ -1,9 +1,12 @@
 require('dotenv').config();
 
 const express = require("express");
+const path = require('path');
+
 const connectDB = require("./dbConnection");
 const userRoutes = require('./src/routes/userRoutes');
 const authRoutes = require('./src/routes/authRoutes');
+const User = require("./src/schemas/userSchema")
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -14,11 +17,20 @@ connectDB(process.env.MONGODB_URL).then(() => {
     console.log('Error connecting to db', err);
 });
 
+app.set('view engine', 'ejs');
+app.set('views', path.resolve('./src/views'));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.get("/", (req, res) => {
-    res.send("Project is Running successfully");
+app.get("/", async (req, res) => {
+    try {
+        const users = await User.find({}).select("-password -refreshToken");
+        res.render("dashboard", { users });
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.render("dashboard", { users: [] });
+    }
 });
 
 app.use('/', userRoutes);
