@@ -57,4 +57,6 @@ userSchema.methods.isPasswordMatch = async function (plainPassword) {
 };
 
 
-module.exports = userSchema;
+const User = mongoose.model("User", userSchema)
+
+module.exports = User
