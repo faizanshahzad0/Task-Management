@@ -6,10 +6,11 @@ const path = require('path');
 const connectDB = require("./dbConnection");
 const userRoutes = require('./src/routes/userRoutes');
 const authRoutes = require('./src/routes/authRoutes');
-const User = require("./src/schemas/userSchema")
+const taskRoutes = require('./src/routes/taskRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+const NODE_ENV = process.env.NODE_ENV;
 
 connectDB(process.env.MONGODB_URL).then(() => {
     console.log('Connected db successfully');
@@ -35,7 +36,10 @@ app.get("/", async (req, res) => {
 
 app.use('/', userRoutes);
 app.use('/', authRoutes);
+app.use('/', taskRoutes);
 
-app.listen(PORT, () => {
-    console.log(`Project is running on port:${PORT}`);
-});
+if (NODE_ENV === "dev") {
+    app.listen(PORT, () => {
+        console.log(`Project is running on port:${PORT}`);
+    });
+}
