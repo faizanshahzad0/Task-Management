@@ -5,6 +5,7 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 
 const connectDB = require("./dbConnection");
+const optionalAuth = require("./src/middlewares/optionalAuth");
 const indexRoutes = require('./src/routes/indexRoutes');
 const errorHandler = require('./src/middlewares/errorHandler');
 
