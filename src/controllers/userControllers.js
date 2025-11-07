@@ -1,19 +1,29 @@
 const User = require("../schemas/userSchema");
 
-const handleGetAllUsers = async (req, res) => {
-  const users = await User.find({}).select("-password -refreshToken");
-  res.status(200).json({ message: "Users Fetched Successfully", users });
-};
-
-const handleGetUserById = async (req, res) => {
-  const user = await User.findById(req.params.id).select("-password -refreshToken");
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
+const handleGetAllUsers = async (req, res, next) => {
+  try {
+    const users = await User.find({}).select("-password -refreshToken");
+    res.status(200).json({ message: "Users Fetched Successfully", users });
+  } catch (error) {
+    next(error);
   }
-  res.status(200).json({ message: "User Fetched Successfully", user });
 };
 
-const handleUpdateUserById = async (req, res) => {
+const handleGetUserById = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password -refreshToken");
+    if (!user) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({ message: "User Fetched Successfully", user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const handleUpdateUserById = async (req, res, next) => {
   try {
     const updateData = {};
     if (req.body.firstName !== undefined)
@@ -33,7 +43,9 @@ const handleUpdateUserById = async (req, res) => {
     );
 
     if (!updatedUser) {
-      return res.status(404).json({ error: "User not found" });
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
     }
 
     return res.json({
@@ -48,23 +60,25 @@ const handleUpdateUserById = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    next(error);
   }
 };
 
-const handleDeleteUser = async (req, res) => {
+const handleDeleteUser = async (req, res, next) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
 
     if (!deletedUser) {
-      return res.status(404).json({ error: "User not found" });
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
     }
     return res.json({
       status: "success",
       message: "User deleted successfully",
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    next(error);
   }
 };
 
