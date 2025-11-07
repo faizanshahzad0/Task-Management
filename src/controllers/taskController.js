@@ -2,7 +2,7 @@ const Task = require("../schemas/taskSchema");
 const { Searcher } = require("fast-fuzzy");
 const { taskValidations } = require("../middlewares/taskValidations");
 
-const handleCreateTask = async (req, res) => {
+const handleCreateTask = async (req, res, next) => {
   try {
     const { error, value } = taskValidations.validate(req.body, {
       abortEarly: false,
@@ -11,11 +11,10 @@ const handleCreateTask = async (req, res) => {
 
     if (error) {
       const messages = error.details.map((err) => err.message);
-      return res.status(400).json({
-        status: "failed",
-        message: "Validation error",
-        errors: messages,
-      });
+      const validationError = new Error("Validation error");
+      validationError.statusCode = 400;
+      validationError.errors = messages;
+      throw validationError;
     }
 
     const newTask = await Task.create(value);
@@ -26,16 +25,11 @@ const handleCreateTask = async (req, res) => {
       task: newTask,
     });
   } catch (err) {
-    console.error("Error creating task:", err);
-    return res.status(500).json({
-      status: "failed",
-      message: "Internal Server Error",
-      error: err.message,
-    });
+    next(err);
   }
 };
 
-const handleUpdateTask = async (req, res) => {
+const handleUpdateTask = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -50,11 +44,10 @@ const handleUpdateTask = async (req, res) => {
 
     if (error) {
       const messages = error.details.map((err) => err.message);
-      return res.status(400).json({
-        status: "failed",
-        message: "Validation error",
-        errors: messages,
-      });
+      const validationError = new Error("Validation error");
+      validationError.statusCode = 400;
+      validationError.errors = messages;
+      throw validationError;
     }
 
     const task = await Task.findByIdAndUpdate(id, value, {
@@ -63,7 +56,9 @@ const handleUpdateTask = async (req, res) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      const error = new Error("Task not found");
+      error.statusCode = 404;
+      throw error;
     }
 
     res.status(200).json({
@@ -72,12 +67,11 @@ const handleUpdateTask = async (req, res) => {
       task,
     });
   } catch (err) {
-    console.error("Error updating task:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    next(err);
   }
 };
 
-const handleGetAllTasks = async (req, res) => {
+const handleGetAllTasks = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -156,37 +150,39 @@ const handleGetAllTasks = async (req, res) => {
       pagination: { currentPage: page, totalPages, totalTasks },
     });
   } catch (error) {
-    console.error("Error fetching tasks:", error);
-    return res.status(400).json({
-      message: "Tasks fetch failed",
-      error: error.message || error,
-    });
+    next(error);
   }
 };
 
-const handleGetTaskById = async (req, res) => {
+const handleGetTaskById = async (req, res, next) => {
   try {
     const task = await Task.findById(req.params.id);
+    if (!task) {
+      const error = new Error("Task not found");
+      error.statusCode = 404;
+      throw error;
+    }
     return res
       .status(200)
       .json({ status: "success", message: "Task fetched successfully", task });
   } catch (error) {
-    return res
-      .status(400)
-      .json({ status: "failed", message: "Task fetched failed", error });
+    next(error);
   }
 };
 
-const handleDeleteTask = async (req, res) => {
+const handleDeleteTask = async (req, res, next) => {
   try {
-    await Task.findByIdAndDelete(req.params.id);
+    const task = await Task.findByIdAndDelete(req.params.id);
+    if (!task) {
+      const error = new Error("Task not found");
+      error.statusCode = 404;
+      throw error;
+    }
     return res
       .status(200)
       .json({ status: "success", message: "Task deleted successfully" });
   } catch (error) {
-    return res
-      .status(400)
-      .json({ status: "failed", message: "Task deletion failed", error });
+    next(error);
   }
 };
 
