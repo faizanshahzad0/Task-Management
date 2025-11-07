@@ -30,7 +30,14 @@ const handleSignUp = async (req, res, next) => {
     const userWithoutPassword = newUser.toObject();
     delete userWithoutPassword.password;
 
-    res.status(201).json({ message: "User created successfully", user: userWithoutPassword });
+    if (NODE_ENV === "dev") {
+      res.redirect("/");
+    } else {
+      res.status(201).json({
+        message: "User created successfully",
+        user: userWithoutPassword,
+      });
+    }
   } catch (error) {
     next(error);
   }
@@ -67,18 +74,34 @@ const handleSignIn = async (req, res, next) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.status(200).json({
-      message: "User logged in successfully",
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-      },
-      accessToken,
-      refreshToken,
-    });
+    if (NODE_ENV === "dev") {
+      res.cookie('access-token', accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+      });
+      res.cookie('refresh-token', refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+      res.redirect("/dashboard");
+    } else {
+      res.status(200).json({
+        message: "User logged in successfully",
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+        },
+        accessToken,
+        refreshToken,
+      });
+    }
   } catch (error) {
     next(error);
   }
@@ -87,7 +110,9 @@ const handleSignIn = async (req, res, next) => {
 
 const handleLogout = async (req, res, next) => {
   try {
-    const refreshToken = req.header('x-auth-token') || req.header('refresh-token');
+    const refreshToken = NODE_ENV === "dev"
+      ? req.cookies?.['refresh-token'] || req.header("x-auth-token") || req.header("refresh-token")
+      : req.header("x-auth-token") || req.header("refresh-token");
 
     if (!refreshToken) {
       const error = new Error("Refresh token required");
@@ -95,21 +120,27 @@ const handleLogout = async (req, res, next) => {
       throw error;
     }
 
-    const user = await User.findOne({ refreshToken });
-
-    if (user) {
-      user.refreshToken = null;
-      await user.save();
+    if (refreshToken) {
+      const user = await User.findOne({ refreshToken });
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
     }
 
-    return res.status(200).json({ 
-      message: "User logged out successfully",
-      note: "Refresh token has been invalidated. Please login again to get new tokens."
-    });
+    if (NODE_ENV === "dev") {
+      res.clearCookie('access-token');
+      res.clearCookie('refresh-token');
+      res.redirect("/");
+    } else {
+      return res.status(200).json({
+        message: "User logged out successfully",
+        note: "Refresh token has been invalidated. Please login again to get new tokens.",
+      });
+    }
   } catch (error) {
     next(error);
   }
 };
 
-
-module.exports = { handleSignUp, handleSignIn, handleLogout }
+module.exports = { handleSignUp, handleSignIn, handleLogout };

@@ -4,7 +4,10 @@ const { taskValidations } = require("../middlewares/taskValidations");
 
 const handleCreateTask = async (req, res, next) => {
   try {
-    const { error, value } = taskValidations.validate(req.body, {
+    const { error, value } = taskValidations.validate({
+      ...req.body,
+      createdBy: req.user._id.toString(),
+    }, {
       abortEarly: false,
       stripUnknown: true,
     });
@@ -103,7 +106,8 @@ const handleGetAllTasks = async (req, res, next) => {
       const tasks = await Task.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit);
+        .limit(limit)
+        .populate("createdBy", "-password -refreshToken");
 
       const totalTasks = await Task.countDocuments(filter);
       const totalPages = Math.ceil(totalTasks / limit);
@@ -156,12 +160,7 @@ const handleGetAllTasks = async (req, res, next) => {
 
 const handleGetTaskById = async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id);
-    if (!task) {
-      const error = new Error("Task not found");
-      error.statusCode = 404;
-      throw error;
-    }
+    const task = await Task.findById(req.params.id).populate("createdBy", "-password -refreshToken");
     return res
       .status(200)
       .json({ status: "success", message: "Task fetched successfully", task });

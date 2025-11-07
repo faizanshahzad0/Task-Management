@@ -29,6 +29,10 @@ const taskValidations = Joi.object({
       TASKS_PRIORITIES.URGENT
     )
     .default(TASKS_PRIORITIES.MEDIUM),
+  createdBy: Joi.string().required().messages({
+    "any.required": "Created by is required",
+    "string.empty": "Created by cannot be empty",
+  }),
 
   completedAt: Joi.date().optional(),
   dueDate: Joi.date().optional(),
