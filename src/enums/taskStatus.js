@@ -1,0 +1,13 @@
+export const TASKS_STATUSES = {
+    PENDING: "PENDING",
+    INPROGRESS: "INPROGRESS",
+    COMPLETED: "COMPLETED",
+    BLOCKER: "BLOCKER",
+}
+
+export const TASKS_PRIORITIES = {
+    LOW: "LOW",
+    MEDIUM: "MEDIUM",
+    HIGH: "HIGH",
+    URGENT: "URGENT",
+}
