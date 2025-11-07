@@ -5,15 +5,12 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 
 const connectDB = require("./dbConnection");
-const userRoutes = require("./src/routes/userRoutes");
-const authRoutes = require("./src/routes/authRoutes");
-const taskRoutes = require("./src/routes/taskRoutes");
-const Task = require("./src/schemas/taskSchema");
-const optionalAuth = require("./src/middlewares/optionalAuth");
+const indexRoutes = require('./src/routes/indexRoutes');
+const errorHandler = require('./src/middlewares/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-const NODE_ENV = process.env.NODE_ENV;
+const NODE_ENV = process.env.NODE_ENV || 'dev';
 
 connectDB(process.env.MONGODB_URL)
   .then(() => {
@@ -69,9 +66,9 @@ app.get("/", (req, res) => {
   res.render("signin");
 });
 
-app.use("/", userRoutes);
-app.use("/", authRoutes);
-app.use("/", taskRoutes);
+app.use('/', indexRoutes);
+
+app.use(errorHandler);
 
 if (NODE_ENV === "dev") {
   app.listen(PORT, () => {

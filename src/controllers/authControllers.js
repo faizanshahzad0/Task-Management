@@ -1,20 +1,22 @@
 const User = require("../schemas/userSchema");
 const { accToken, refToken } = require("../services/jwtAuthentication");
 
-const NODE_ENV = process.env.NODE_ENV;
-
-const handleSignUp = async (req, res) => {
+const handleSignUp = async (req, res, next) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
 
     if (!firstName || !lastName || !email || !password || !role) {
-      return res.status(400).json({ message: "Missing required fields" });
+      const error = new Error("Missing required fields");
+      error.statusCode = 400;
+      throw error;
     }
 
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      const error = new Error("User already exists");
+      error.statusCode = 400;
+      throw error;
     }
 
     const newUser = await User.create({
@@ -37,30 +39,34 @@ const handleSignUp = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Signup error:", error);
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
-const handleSignIn = async (req, res) => {
+
+const handleSignIn = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
+      const error = new Error("Email and password are required");
+      error.statusCode = 400;
+      throw error;
     }
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
+    }
 
     const isMatch = await user.isPasswordMatch(password);
-    if (!isMatch)
-      return res.status(401).json({ message: "Invalid email or password" });
+    if (!isMatch) {
+      const error = new Error("Invalid email or password");
+      error.statusCode = 401;
+      throw error;
+    }
 
     const accessToken = accToken(user);
     const refreshToken = refToken(user);
@@ -97,22 +103,21 @@ const handleSignIn = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Signin error:", error);
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
-const handleLogout = async (req, res) => {
+
+const handleLogout = async (req, res, next) => {
   try {
     const refreshToken = NODE_ENV === "dev"
       ? req.cookies?.['refresh-token'] || req.header("x-auth-token") || req.header("refresh-token")
       : req.header("x-auth-token") || req.header("refresh-token");
 
-    if (!refreshToken && NODE_ENV !== "dev") {
-      return res.status(401).json({ error: "Refresh token required" });
+    if (!refreshToken) {
+      const error = new Error("Refresh token required");
+      error.statusCode = 401;
+      throw error;
     }
 
     if (refreshToken) {
@@ -134,11 +139,7 @@ const handleLogout = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Logout error:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
